@@ -15,22 +15,29 @@
     <!-- Header -->
     <header>
         <h1>Smart Travel Planner</h1>
-        <p>Find the best travel route within your available time</p>
+        <p>
+            Plan your journey and find the best places to visit
+            within your available time
+        </p>
     </header>
 
 
-    <!-- Main Content -->
     <main>
 
-        <!-- Travel Planner Form -->
+        <!-- ============================= -->
+        <!-- TRIP INPUT SECTION -->
+        <!-- ============================= -->
+
         <section class="planner-section">
 
-            <h2>Plan Your Journey</h2>
+            <h2>Plan Your Trip</h2>
 
             <form id="travelForm">
 
                 <!-- Starting Location -->
+
                 <div class="form-group">
+
                     <label for="startLocation">
                         Starting Location
                     </label>
@@ -39,30 +46,38 @@
                         type="text"
                         id="startLocation"
                         name="startLocation"
-                        placeholder="Enter starting location"
+                        placeholder="Example: Pune Station"
                         required
                     >
+
                 </div>
 
 
-                <!-- Final Location -->
+                <!-- Number of Places -->
+
                 <div class="form-group">
-                    <label for="finalLocation">
-                        Final Location
+
+                    <label for="numberOfPlaces">
+                        Number of Places You Want to Consider
                     </label>
 
                     <input
-                        type="text"
-                        id="finalLocation"
-                        name="finalLocation"
-                        placeholder="Enter final location"
+                        type="number"
+                        id="numberOfPlaces"
+                        name="numberOfPlaces"
+                        min="1"
+                        max="10"
+                        placeholder="Example: 5"
                         required
                     >
+
                 </div>
 
 
                 <!-- Available Time -->
+
                 <div class="form-group">
+
                     <label for="availableTime">
                         Available Time (hours)
                     </label>
@@ -71,34 +86,60 @@
                         type="number"
                         id="availableTime"
                         name="availableTime"
+                        min="0.5"
+                        step="0.5"
                         placeholder="Example: 8"
-                        min="0.1"
-                        step="0.1"
                         required
                     >
+
                 </div>
 
 
-                <!-- Travel Speed -->
+                <!-- Final Location -->
+
                 <div class="form-group">
-                    <label for="travelSpeed">
-                        Travel Speed (km/h)
+
+                    <label for="finalLocation">
+                        Final Location
                     </label>
 
                     <input
-                        type="number"
-                        id="travelSpeed"
-                        name="travelSpeed"
-                        placeholder="Example: 40"
-                        min="1"
-                        step="0.1"
+                        type="text"
+                        id="finalLocation"
+                        name="finalLocation"
+                        placeholder="Example: Pune Station"
                         required
                     >
+
                 </div>
 
 
-                <!-- Submit Button -->
-                <button type="submit">
+                <!-- Button to create place inputs -->
+
+                <button
+                    type="button"
+                    id="addPlacesButton"
+                >
+                    Enter Places
+                </button>
+
+
+                <!-- ================================= -->
+                <!-- DYNAMIC PLACES WILL APPEAR HERE -->
+                <!-- ================================= -->
+
+                <div id="placesContainer"></div>
+
+
+                <!-- ================================= -->
+                <!-- CALCULATE BUTTON -->
+                <!-- ================================= -->
+
+                <button
+                    type="submit"
+                    id="calculateButton"
+                    style="display: none;"
+                >
                     Find Best Travel Plan
                 </button>
 
@@ -107,75 +148,145 @@
         </section>
 
 
-        <!-- Result Section -->
+        <!-- ================================= -->
+        <!-- RESULT SECTION -->
+        <!-- ================================= -->
+
         <section
             id="resultSection"
             class="result-section"
             style="display: none;"
         >
 
-            <h2>Travel Plan Result</h2>
+            <h2>Your Travel Plan</h2>
 
 
-            <!-- Result Cards -->
-            <div class="result-card">
+            <!-- Selected Places -->
 
-                <div class="result-item">
-                    <h3>Best Route</h3>
-                    <p id="route">No route found</p>
-                </div>
+            <div class="result-item">
 
+                <h3>Places to Visit</h3>
 
-                <div class="result-item">
-                    <h3>Total Distance</h3>
-                    <p id="totalDistance">0 km</p>
-                </div>
-
-
-                <div class="result-item">
-                    <h3>Travel Time</h3>
-                    <p id="travelTime">0 min</p>
-                </div>
-
-
-                <div class="result-item">
-                    <h3>Exploration Time</h3>
-                    <p id="explorationTime">0 min</p>
-                </div>
-
-
-                <div class="result-item">
-                    <h3>Total Time</h3>
-                    <p id="totalTime">0 min</p>
-                </div>
-
-
-                <div class="result-item">
-                    <h3>Total Value</h3>
-                    <p id="totalValue">0</p>
-                </div>
+                <p id="selectedPlaces">
+                    No places selected
+                </p>
 
             </div>
 
 
-            <!-- Route Visualization -->
+            <!-- Skipped Places -->
+
+            <div class="result-item">
+
+                <h3>Places Not Selected</h3>
+
+                <p id="skippedPlaces">
+                    None
+                </p>
+
+            </div>
+
+
+            <!-- Recommended Order -->
+
+            <div class="result-item">
+
+                <h3>Recommended Visiting Order</h3>
+
+                <p id="route">
+                    No route calculated
+                </p>
+
+            </div>
+
+
+            <!-- Total Distance -->
+
+            <div class="result-item">
+
+                <h3>Total Distance</h3>
+
+                <p id="totalDistance">
+                    0 km
+                </p>
+
+            </div>
+
+
+            <!-- Travel Time -->
+
+            <div class="result-item">
+
+                <h3>Total Travel Time</h3>
+
+                <p id="travelTime">
+                    0 hr
+                </p>
+
+            </div>
+
+
+            <!-- Exploration Time -->
+
+            <div class="result-item">
+
+                <h3>Total Exploration Time</h3>
+
+                <p id="explorationTime">
+                    0 hr
+                </p>
+
+            </div>
+
+
+            <!-- Total Trip Time -->
+
+            <div class="result-item">
+
+                <h3>Total Trip Time</h3>
+
+                <p id="totalTime">
+                    0 hr
+                </p>
+
+            </div>
+
+
+            <!-- Remaining Time -->
+
+            <div class="result-item">
+
+                <h3>Remaining Time</h3>
+
+                <p id="remainingTime">
+                    0 hr
+                </p>
+
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- ROUTE VISUALIZATION -->
+            <!-- ================================= -->
+
             <section class="route-section">
 
                 <h2>Route Visualization</h2>
 
-                <div id="routeVisualization">
-                </div>
+                <div id="routeVisualization"></div>
 
             </section>
 
 
-            <!-- Branch and Bound Visualization -->
+            <!-- ================================= -->
+            <!-- BRANCH AND BOUND VISUALIZATION -->
+            <!-- ================================= -->
+
             <section class="visualization-section">
 
-                <h2>Branch and Bound Visualization</h2>
+                <h2>Branch and Bound Search</h2>
 
-                <div id="visualization">
-                </div>
+                <div id="visualization"></div>
 
             </section>
 
@@ -185,6 +296,7 @@
 
 
     <!-- Footer -->
+
     <footer>
 
         <p>
@@ -195,8 +307,10 @@
     </footer>
 
 
-    <!-- JavaScript Files -->
+    <!-- JavaScript -->
+
     <script src="js/visualization.js"></script>
+
     <script src="js/app.js"></script>
 
 </body>
