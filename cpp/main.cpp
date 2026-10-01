@@ -1,44 +1,50 @@
 // ============================================================
 //              SMART TRAVEL PLANNER
-//                BRANCH & BOUND
+//                 BRANCH & BOUND
 // ============================================================
 //
-// This program receives trip data from the backend.
+// DAA PROJECT
 //
-// Input:
-// - Starting location
-// - Tourist places
-// - Exploration time
-// - Value of each place
-// - Final location
-// - Available time
-// - Travel-time matrix from GPS/Routing API
+// Main Goal:
+// Find the best set and order of tourist places that a traveler
+// can visit within a limited amount of time.
 //
-// The Branch & Bound algorithm decides:
-// - Which places to visit
-// - Which places to skip
-// - Order of selected places
+// The algorithm uses Branch and Bound.
 //
-// Output:
-// - Selected places
-// - Skipped places
-// - Recommended route
-// - Travel time
-// - Exploration time
-// - Total time
-// - Remaining time
-// - Total value
-// - Nodes explored
-// - Nodes pruned
+// Data received from backend:
+//     - Starting location
+//     - Final location
+//     - Available time
+//     - Tourist places
+//     - Exploration time
+//     - Value of each place
+//     - Travel time matrix from GPS/Routing API
+//     - Distance matrix from GPS/Routing API
+//
+// Branch and Bound internally:
+//     1. Creates possible routes
+//     2. Calculates current route value
+//     3. Calculates optimistic upper bound
+//     4. Prunes routes that cannot beat the current best route
+//
+// Final output:
+//     - Recommended places
+//     - Visit order
+//     - Skipped places
+//     - Total distance
+//     - Travel time
+//     - Exploration time
+//     - Total time
+//     - Remaining time
+//     - Total value
 //
 // ============================================================
 
 #include <iostream>
 #include <vector>
 #include <string>
-#include <algorithm>
 #include <iomanip>
-#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -51,7 +57,7 @@ struct Place
 {
     string name;
 
-    // Exploration time in hours
+    // Time needed to explore the place
     double exploreTime;
 
     // Importance / attraction value
@@ -60,7 +66,7 @@ struct Place
 
 
 // ============================================================
-// 2. TRAVEL PLANNER CLASS
+// 2. BRANCH AND BOUND CLASS
 // ============================================================
 
 class TravelPlanner
@@ -68,35 +74,59 @@ class TravelPlanner
 private:
 
     // --------------------------------------------------------
-    // Input data
+    // All locations
+    //
+    // Index 0:
+    // Starting location
+    //
+    // Index 1 to n:
+    // Tourist places
+    //
+    // Last index:
+    // Final location
     // --------------------------------------------------------
 
     vector<Place> places;
 
-    /*
-        travelTime[i][j]
 
-        Travel time from location i
-        to location j.
-
-        This matrix will come from the
-        GPS / routing API through Node.js.
-    */
+    // --------------------------------------------------------
+    // Travel time matrix
+    //
+    // Provided by GPS / Routing API
+    //
+    // travelTime[i][j] =
+    // travel duration from i to j in hours
+    // --------------------------------------------------------
 
     vector<vector<double>> travelTime;
+
+
+    // --------------------------------------------------------
+    // Distance matrix
+    //
+    // Provided by GPS / Routing API
+    //
+    // distance[i][j] =
+    // road distance from i to j in km
+    // --------------------------------------------------------
+
+    vector<vector<double>> distanceMatrix;
+
 
     // Maximum time available
     double maxTime;
 
-    // Index of starting location
+
+    // Starting location index
     int start;
 
-    // Index of final location
+
+    // Final location index
     int finalLocation;
 
 
     // --------------------------------------------------------
-    // Best solution
+    // Best solution found
     // --------------------------------------------------------
 
     int bestValue;
@@ -107,11 +137,13 @@ private:
 
     double bestExploreTime;
 
+    double bestDistance;
+
     vector<int> bestRoute;
 
 
     // --------------------------------------------------------
-    // DAA statistics
+    // Branch & Bound statistics
     // --------------------------------------------------------
 
     long long nodesExplored;
@@ -139,19 +171,12 @@ private:
 
 
         // ----------------------------------------------------
-        // Find unvisited tourist places
+        // Store unvisited places with their
+        // value / exploration-time ratio
         // ----------------------------------------------------
 
         vector<pair<double, int>> candidates;
 
-
-        /*
-            Location structure:
-
-            0                 = Start
-            1 ... n           = Tourist places
-            n + 1             = Final
-        */
 
         for (int i = 1;
              i < finalLocation;
@@ -165,6 +190,7 @@ private:
                         (double)places[i].value /
                         places[i].exploreTime;
 
+
                     candidates.push_back(
                         {ratio, i}
                     );
@@ -174,7 +200,7 @@ private:
 
 
         // ----------------------------------------------------
-        // Sort by value / exploration-time ratio
+        // Highest value/time ratio first
         // ----------------------------------------------------
 
         sort(
@@ -196,6 +222,7 @@ private:
         double boundValue =
             currentValue;
 
+
         double remaining =
             remainingTime;
 
@@ -211,22 +238,19 @@ private:
                 remaining -=
                     places[index].exploreTime;
 
+
                 boundValue +=
                     places[index].value;
             }
             else
             {
-                /*
-                    Fractional value is used only for
-                    calculating the optimistic bound.
-
-                    A real solution can never take
-                    a fraction of a tourist place.
-                */
+                // Fractional value is allowed only
+                // for calculating the optimistic bound.
 
                 boundValue +=
                     candidate.first *
                     remaining;
+
 
                 break;
             }
@@ -238,7 +262,7 @@ private:
 
 
     // ========================================================
-    // BRANCH AND BOUND
+    // BRANCH AND BOUND SEARCH
     // ========================================================
 
     void branchAndBound(
@@ -248,6 +272,7 @@ private:
         double currentTime,
         double currentTravelTime,
         double currentExploreTime,
+        double currentDistance,
         int currentValue)
     {
         nodesExplored++;
@@ -272,17 +297,28 @@ private:
         if (bound <= bestValue)
         {
             nodesPruned++;
+
             return;
         }
 
 
         // ----------------------------------------------------
-        // Check whether we can return to final location
+        // Travel from current location
+        // to final location
         // ----------------------------------------------------
 
         double returnTime =
             travelTime[current][finalLocation];
 
+
+        double returnDistance =
+            distanceMatrix[current][finalLocation];
+
+
+        // ----------------------------------------------------
+        // Check whether current route can return
+        // to final location within available time
+        // ----------------------------------------------------
 
         double totalTimeWithReturn =
             currentTime + returnTime;
@@ -291,10 +327,10 @@ private:
         if (totalTimeWithReturn <= maxTime)
         {
             /*
-                Current route can return to the
-                final destination.
+                This is a valid complete route.
 
-                Therefore it is a valid candidate.
+                We include the travel from the current
+                location to the final location.
             */
 
             if (currentValue > bestValue)
@@ -302,15 +338,24 @@ private:
                 bestValue =
                     currentValue;
 
+
                 bestTotalTime =
                     totalTimeWithReturn;
+
 
                 bestTravelTime =
                     currentTravelTime +
                     returnTime;
 
+
                 bestExploreTime =
                     currentExploreTime;
+
+
+                bestDistance =
+                    currentDistance +
+                    returnDistance;
+
 
                 bestRoute =
                     currentRoute;
@@ -326,6 +371,7 @@ private:
              next < finalLocation;
              next++)
         {
+            // Already visited
             if (visited[next])
             {
                 continue;
@@ -333,7 +379,7 @@ private:
 
 
             // ------------------------------------------------
-            // Travel from current place to next place
+            // Travel time to next place
             // ------------------------------------------------
 
             double moveTime =
@@ -341,7 +387,19 @@ private:
 
 
             // ------------------------------------------------
-            // Total time after visiting next place
+            // Distance to next place
+            // ------------------------------------------------
+
+            double moveDistance =
+                distanceMatrix[current][next];
+
+
+            // ------------------------------------------------
+            // New total time
+            //
+            // Current time
+            // + travel time
+            // + exploration time
             // ------------------------------------------------
 
             double newTime =
@@ -351,28 +409,31 @@ private:
 
 
             // ------------------------------------------------
-            // If time limit is exceeded, prune
+            // If time limit is exceeded
+            // prune this branch
             // ------------------------------------------------
 
             if (newTime > maxTime)
             {
                 nodesPruned++;
+
                 continue;
             }
 
 
             // ------------------------------------------------
-            // Choose the next place
+            // Choose next place
             // ------------------------------------------------
 
             visited[next] =
                 true;
 
+
             currentRoute.push_back(next);
 
 
             // ------------------------------------------------
-            // Continue Branch & Bound
+            // Recursive Branch & Bound call
             // ------------------------------------------------
 
             branchAndBound(
@@ -390,13 +451,16 @@ private:
                 currentExploreTime +
                     places[next].exploreTime,
 
+                currentDistance +
+                    moveDistance,
+
                 currentValue +
                     places[next].value
             );
 
 
             // ------------------------------------------------
-            // Backtrack
+            // BACKTRACK
             // ------------------------------------------------
 
             currentRoute.pop_back();
@@ -416,9 +480,10 @@ public:
     TravelPlanner(
         const vector<Place>& p,
         const vector<vector<double>>& t,
+        const vector<vector<double>>& d,
         double availableTime,
-        int startingLocation,
-        int endingLocation)
+        int startingPlace,
+        int endingPlace)
     {
         places =
             p;
@@ -426,14 +491,17 @@ public:
         travelTime =
             t;
 
+        distanceMatrix =
+            d;
+
         maxTime =
             availableTime;
 
         start =
-            startingLocation;
+            startingPlace;
 
         finalLocation =
-            endingLocation;
+            endingPlace;
 
 
         // ----------------------------------------------------
@@ -450,6 +518,9 @@ public:
             0.0;
 
         bestExploreTime =
+            0.0;
+
+        bestDistance =
             0.0;
 
 
@@ -483,16 +554,15 @@ public:
         vector<int> currentRoute;
 
 
-        /*
-            Start and final locations are not
-            tourist places.
-
-            They should not be selected for value.
-        */
+        // ----------------------------------------------------
+        // Start is already visited
+        // ----------------------------------------------------
 
         visited[start] =
             true;
 
+
+        // Final location is not a tourist place
         visited[finalLocation] =
             true;
 
@@ -514,61 +584,20 @@ public:
 
             0.0,
 
+            0.0,
+
             0
         );
     }
 
 
     // ========================================================
-    // GET RESULTS
+    // GET SELECTED PLACES
     // ========================================================
-
-    int getBestValue() const
-    {
-        return bestValue;
-    }
-
-
-    double getBestTotalTime() const
-    {
-        return bestTotalTime;
-    }
-
-
-    double getBestTravelTime() const
-    {
-        return bestTravelTime;
-    }
-
-
-    double getBestExploreTime() const
-    {
-        return bestExploreTime;
-    }
-
-
-    double getRemainingTime() const
-    {
-        return maxTime -
-               bestTotalTime;
-    }
-
 
     vector<int> getBestRoute() const
     {
         return bestRoute;
-    }
-
-
-    long long getNodesExplored() const
-    {
-        return nodesExplored;
-    }
-
-
-    long long getNodesPruned() const
-    {
-        return nodesPruned;
     }
 
 
@@ -610,27 +639,83 @@ public:
 
 
     // ========================================================
+    // GETTERS
+    // ========================================================
+
+    int getBestValue() const
+    {
+        return bestValue;
+    }
+
+
+    double getBestTotalTime() const
+    {
+        return bestTotalTime;
+    }
+
+
+    double getBestTravelTime() const
+    {
+        return bestTravelTime;
+    }
+
+
+    double getBestExploreTime() const
+    {
+        return bestExploreTime;
+    }
+
+
+    double getBestDistance() const
+    {
+        return bestDistance;
+    }
+
+
+    double getRemainingTime() const
+    {
+        return maxTime -
+               bestTotalTime;
+    }
+
+
+    long long getNodesExplored() const
+    {
+        return nodesExplored;
+    }
+
+
+    long long getNodesPruned() const
+    {
+        return nodesPruned;
+    }
+
+
+    // ========================================================
     // DISPLAY RESULT
     // ========================================================
 
     void displayResult() const
     {
         cout << "\n";
+
         cout << "============================================================\n";
+
         cout << "                  YOUR TRAVEL PLAN\n";
+
         cout << "============================================================\n";
 
 
         if (bestValue < 0)
         {
-            cout << "\nNo feasible travel plan found.\n";
+            cout << "\nNo feasible travel plan was found.\n";
 
             return;
         }
 
 
         // ----------------------------------------------------
-        // Starting location
+        // Start
         // ----------------------------------------------------
 
         cout << "\nStarting Location:\n";
@@ -644,7 +729,7 @@ public:
         // Selected places
         // ----------------------------------------------------
 
-        cout << "\nPlaces to Visit:\n";
+        cout << "\nRecommended Places:\n";
 
         cout << "------------------------------------------------------------\n";
 
@@ -669,6 +754,8 @@ public:
                      << places[index].name
 
                      << " | Explore: "
+                     << fixed
+                     << setprecision(2)
                      << places[index].exploreTime
                      << " hrs"
 
@@ -680,11 +767,14 @@ public:
         }
 
 
+        cout << "------------------------------------------------------------\n";
+
+
         // ----------------------------------------------------
         // Skipped places
         // ----------------------------------------------------
 
-        cout << "\nPlaces Not Selected:\n";
+        cout << "\nSkipped Places:\n";
 
         vector<int> skipped =
             getSkippedPlaces();
@@ -706,7 +796,7 @@ public:
 
 
         // ----------------------------------------------------
-        // Recommended route
+        // Route
         // ----------------------------------------------------
 
         cout << "\nRecommended Route:\n";
@@ -732,7 +822,7 @@ public:
 
 
         // ----------------------------------------------------
-        // Trip summary
+        // Summary
         // ----------------------------------------------------
 
         cout << "\nTrip Summary\n";
@@ -770,7 +860,7 @@ public:
 
         cout << left
              << setw(25)
-             << "Total Time"
+             << "Total Time Used"
              << ": "
              << bestTotalTime
              << " hours\n";
@@ -782,6 +872,14 @@ public:
              << ": "
              << getRemainingTime()
              << " hours\n";
+
+
+        cout << left
+             << setw(25)
+             << "Total Distance"
+             << ": "
+             << bestDistance
+             << " km\n";
 
 
         cout << left
@@ -805,14 +903,17 @@ public:
 
 
     // ========================================================
-    // DISPLAY DAA INFORMATION
+    // DISPLAY ALGORITHM INFORMATION
     // ========================================================
 
     void displayAlgorithmInfo() const
     {
         cout << "\n";
+
         cout << "============================================================\n";
+
         cout << "             BRANCH & BOUND ANALYSIS\n";
+
         cout << "============================================================\n";
 
 
@@ -829,25 +930,36 @@ public:
         cout << "\n1. BRANCHING\n";
 
         cout << "   The algorithm tries different tourist places\n";
+
         cout << "   as the next destination.\n";
 
 
         cout << "\n2. BOUNDING\n";
 
         cout << "   An optimistic upper bound estimates the maximum\n";
-        cout << "   value that a partial route could achieve.\n";
+
+        cout << "   possible value of a partial route.\n";
 
 
         cout << "\n3. PRUNING\n";
 
         cout << "   A branch is discarded when it cannot improve\n";
+
         cout << "   the current best solution.\n";
 
 
-        cout << "\n4. BEST SOLUTION\n";
+        cout << "\n4. TIME CONSTRAINT\n";
+
+        cout << "   Every route must also have enough time to reach\n";
+
+        cout << "   the final destination.\n";
+
+
+        cout << "\n5. BEST SOLUTION\n";
 
         cout << "   The feasible route with the highest total value\n";
-        cout << "   is selected within the available time.\n";
+
+        cout << "   is selected.\n";
     }
 };
 
@@ -855,42 +967,46 @@ public:
 // ============================================================
 // 3. MAIN FUNCTION
 // ============================================================
+//
+// IMPORTANT:
+//
+// In the final application, Node.js will send this information
+// to C++:
+//
+//     Start location
+//     Tourist places
+//     Exploration times
+//     Place values
+//     Final location
+//     Available time
+//     GPS travel-time matrix
+//     GPS distance matrix
+//
+// Therefore there are NO fixed tourist places here.
+//
+// ============================================================
 
 int main()
 {
-    /*
-        IMPORTANT:
+    cout << "\n";
 
-        This main function is intentionally kept simple.
+    cout << "============================================================\n";
 
-        In the final website version, Node.js will provide:
+    cout << "                 SMART TRAVEL PLANNER\n";
 
-        1. Places
-        2. Exploration times
-        3. Place values
-        4. Starting location
-        5. Final location
-        6. Available time
-        7. GPS-generated travel-time matrix
+    cout << "                  BRANCH & BOUND\n";
 
-        Therefore, NO tourist places are hard-coded here.
-    */
+    cout << "============================================================\n";
 
 
     // --------------------------------------------------------
-    // Temporary example input
+    // Number of tourist places
     // --------------------------------------------------------
-    //
-    // This section is only for testing the C++ algorithm
-    // until Node.js is connected.
-    //
-    // It can later be replaced by JSON input from Node.js.
-    // --------------------------------------------------------
-
 
     int numberOfPlaces;
 
-    cout << "Enter number of tourist places: ";
+
+    cout << "\nEnter number of tourist places: ";
 
     cin >> numberOfPlaces;
 
@@ -904,15 +1020,19 @@ int main()
 
 
     // --------------------------------------------------------
-    // Total locations:
+    // Total locations
     //
-    // 0                 = Start
-    // 1 ... n           = Tourist places
-    // n + 1             = Final
+    // 0       = Start
+    // 1..n    = Tourist places
+    // n+1     = Final
     // --------------------------------------------------------
 
     int totalLocations =
         numberOfPlaces + 2;
+
+
+    int finalLocation =
+        numberOfPlaces + 1;
 
 
     vector<Place> places(
@@ -924,7 +1044,7 @@ int main()
     // Starting location
     // --------------------------------------------------------
 
-    cout << "\nEnter starting location: ";
+    cout << "\nStarting location: ";
 
     cin >> ws;
 
@@ -969,11 +1089,11 @@ int main()
         cin >> places[i].exploreTime;
 
 
-        while (places[i].exploreTime <= 0)
+        if (places[i].exploreTime <= 0)
         {
-            cout << "Enter a positive value: ";
+            cout << "Exploration time must be positive.\n";
 
-            cin >> places[i].exploreTime;
+            return 0;
         }
 
 
@@ -982,11 +1102,11 @@ int main()
         cin >> places[i].value;
 
 
-        while (places[i].value <= 0)
+        if (places[i].value <= 0)
         {
-            cout << "Enter a positive value: ";
+            cout << "Place value must be positive.\n";
 
-            cin >> places[i].value;
+            return 0;
         }
     }
 
@@ -995,11 +1115,7 @@ int main()
     // Final location
     // --------------------------------------------------------
 
-    int finalLocation =
-        numberOfPlaces + 1;
-
-
-    cout << "\nEnter final location: ";
+    cout << "\nFinal location: ";
 
     cin >> ws;
 
@@ -1016,19 +1132,24 @@ int main()
         0;
 
 
-    // --------------------------------------------------------
-    // Travel-time matrix
-    // --------------------------------------------------------
+    // ========================================================
+    // TRAVEL TIME MATRIX
+    // ========================================================
     //
     // IMPORTANT:
     //
-    // In the final system this matrix will NOT be entered
-    // manually.
+    // In the final website:
     //
-    // Node.js will obtain it from the GPS/routing API.
+    // GPS / ROUTING API
+    //          ↓
+    //     Node.js
+    //          ↓
+    //    C++ receives matrix
     //
-    // This temporary input is only to test the algorithm.
-    // --------------------------------------------------------
+    // This interactive input is only a temporary way to
+    // test the C++ algorithm before Node.js is connected.
+    //
+    // ========================================================
 
     vector<vector<double>> travelTime(
         totalLocations,
@@ -1040,8 +1161,12 @@ int main()
 
 
     cout << "\n";
-    cout << "Enter travel time between locations.\n";
-    cout << "Use hours. Example: 0.5 = 30 minutes.\n";
+
+    cout << "Travel-time data\n";
+
+    cout << "Enter travel time in hours.\n";
+
+    cout << "Example: 30 minutes = 0.50 hours.\n";
 
 
     for (int i = 0;
@@ -1065,17 +1190,81 @@ int main()
                  << places[i].name
                  << " -> "
                  << places[j].name
-                 << " : ";
+                 << ": ";
 
 
             cin >> travelTime[i][j];
 
 
-            while (travelTime[i][j] < 0)
+            if (travelTime[i][j] < 0)
             {
-                cout << "Travel time cannot be negative. ";
+                cout << "Travel time cannot be negative.\n";
 
-                cin >> travelTime[i][j];
+                return 0;
+            }
+        }
+    }
+
+
+    // ========================================================
+    // DISTANCE MATRIX
+    // ========================================================
+    //
+    // In the final application this will also come from the
+    // GPS / routing API.
+    //
+    // Distance is measured in kilometres.
+    //
+    // ========================================================
+
+    vector<vector<double>> distanceMatrix(
+        totalLocations,
+        vector<double>(
+            totalLocations,
+            0.0
+        )
+    );
+
+
+    cout << "\n";
+
+    cout << "Distance data\n";
+
+    cout << "Enter road distance in kilometres.\n";
+
+
+    for (int i = 0;
+         i < totalLocations;
+         i++)
+    {
+        for (int j = 0;
+             j < totalLocations;
+             j++)
+        {
+            if (i == j)
+            {
+                distanceMatrix[i][j] =
+                    0.0;
+
+                continue;
+            }
+
+
+            cout << "\n"
+                 << places[i].name
+                 << " -> "
+                 << places[j].name
+                 << ": ";
+
+
+            cin >> distanceMatrix[i][j];
+
+
+            if (distanceMatrix[i][j] < 0)
+            {
+                cout << "Distance cannot be negative.\n";
+
+                return 0;
             }
         }
     }
@@ -1093,22 +1282,24 @@ int main()
     cin >> availableTime;
 
 
-    while (availableTime <= 0)
+    if (availableTime <= 0)
     {
-        cout << "Available time must be greater than 0: ";
+        cout << "Available time must be positive.\n";
 
-        cin >> availableTime;
+        return 0;
     }
 
 
-    // --------------------------------------------------------
-    // Create Branch & Bound planner
-    // --------------------------------------------------------
+    // ========================================================
+    // CREATE PLANNER
+    // ========================================================
 
     TravelPlanner planner(
         places,
 
         travelTime,
+
+        distanceMatrix,
 
         availableTime,
 
@@ -1118,36 +1309,42 @@ int main()
     );
 
 
-    // --------------------------------------------------------
-    // Run algorithm
-    // --------------------------------------------------------
+    // ========================================================
+    // RUN BRANCH & BOUND
+    // ========================================================
 
     cout << "\n";
+
     cout << "============================================================\n";
+
     cout << "             PLANNING YOUR TRIP...\n";
+
     cout << "============================================================\n";
 
 
     planner.solve();
 
 
-    // --------------------------------------------------------
-    // Display final result
-    // --------------------------------------------------------
+    // ========================================================
+    // DISPLAY RESULT
+    // ========================================================
 
     planner.displayResult();
 
 
-    // --------------------------------------------------------
-    // Display algorithm information
-    // --------------------------------------------------------
+    // ========================================================
+    // DISPLAY ALGORITHM INFORMATION
+    // ========================================================
 
     planner.displayAlgorithmInfo();
 
 
     cout << "\n";
+
     cout << "============================================================\n";
-    cout << "                  END OF PROGRAM\n";
+
+    cout << "                    END OF PROGRAM\n";
+
     cout << "============================================================\n";
 
 
