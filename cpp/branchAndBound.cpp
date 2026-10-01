@@ -40,7 +40,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <climits>
-
+#include "branchAndBound.h"
 using namespace std;
 
 
