@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const heading = document.createElement("h3");
 
         heading.textContent =
-            "Enter Places and Exploration Time";
+            "Enter Places, Exploration Time and Importance";
 
         placesContainer.appendChild(heading);
 
@@ -57,13 +57,16 @@ document.addEventListener("DOMContentLoaded", () => {
             placeBox.className = "place-box";
 
 
-            // Place name
+            // ======================================
+            // PLACE NAME
+            // ======================================
 
             const placeLabel =
                 document.createElement("label");
 
             placeLabel.textContent =
                 `Place ${i}`;
+
 
             const placeInput =
                 document.createElement("input");
@@ -82,7 +85,9 @@ document.addEventListener("DOMContentLoaded", () => {
             placeInput.required = true;
 
 
-            // Exploration time
+            // ======================================
+            // EXPLORATION TIME
+            // ======================================
 
             const timeLabel =
                 document.createElement("label");
@@ -112,7 +117,41 @@ document.addEventListener("DOMContentLoaded", () => {
             timeInput.required = true;
 
 
-            // Add elements
+            // ======================================
+            // IMPORTANCE / VALUE
+            // ======================================
+
+            const valueLabel =
+                document.createElement("label");
+
+            valueLabel.textContent =
+                "Importance / Value";
+
+
+            const valueInput =
+                document.createElement("input");
+
+            valueInput.type = "number";
+
+            valueInput.id =
+                `placeValue${i}`;
+
+            valueInput.className =
+                "place-value";
+
+            valueInput.placeholder =
+                "Example: 8";
+
+            valueInput.min = "1";
+
+            valueInput.step = "1";
+
+            valueInput.required = true;
+
+
+            // ======================================
+            // ADD ELEMENTS
+            // ======================================
 
             placeBox.appendChild(placeLabel);
 
@@ -121,6 +160,10 @@ document.addEventListener("DOMContentLoaded", () => {
             placeBox.appendChild(timeLabel);
 
             placeBox.appendChild(timeInput);
+
+            placeBox.appendChild(valueLabel);
+
+            placeBox.appendChild(valueInput);
 
 
             placesContainer.appendChild(placeBox);
@@ -224,6 +267,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
+            const value =
+                parseInt(
+                    document.getElementById(
+                        `placeValue${i}`
+                    ).value
+                );
+
+
+            // ==================================
+            // PLACE NAME VALIDATION
+            // ==================================
+
             if (!name) {
 
                 alert(
@@ -233,6 +288,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+
+            // ==================================
+            // EXPLORATION TIME VALIDATION
+            // ==================================
 
             if (
                 isNaN(exploreTime) ||
@@ -247,11 +306,34 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
+            // ==================================
+            // VALUE VALIDATION
+            // ==================================
+
+            if (
+                isNaN(value) ||
+                value <= 0
+            ) {
+
+                alert(
+                    `Please enter valid importance/value for Place ${i}.`
+                );
+
+                return;
+            }
+
+
+            // ==================================
+            // ADD PLACE DATA
+            // ==================================
+
             places.push({
 
                 name: name,
 
-                exploreTime: exploreTime
+                exploreTime: exploreTime,
+
+                value: value
 
             });
 
