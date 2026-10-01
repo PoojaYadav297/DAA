@@ -102,6 +102,8 @@ public:
     // Get total distance
     double getBestDistance() const;
 
+double getRemainingTime() const;
+
     // Get number of explored nodes
     long long getNodesExplored() const;
 
