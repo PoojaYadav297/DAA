@@ -58,9 +58,9 @@ app.post("/api/plan-trip", (req, res) => {
         } = req.body;
 
 
-        // --------------------------------------
+        // ======================================
         // VALIDATION
-        // --------------------------------------
+        // ======================================
 
         if (!startLocation) {
 
@@ -103,7 +103,8 @@ app.post("/api/plan-trip", (req, res) => {
 
 
         if (
-            !availableTime ||
+            availableTime === undefined ||
+            availableTime === null ||
             availableTime <= 0
         ) {
 
@@ -115,24 +116,34 @@ app.post("/api/plan-trip", (req, res) => {
         }
 
 
-        // --------------------------------------
+        // ======================================
         // CHECK EACH PLACE
-        // --------------------------------------
+        // ======================================
 
         for (let i = 0; i < places.length; i++) {
+
+            // ----------------------------------
+            // PLACE NAME
+            // ----------------------------------
 
             if (!places[i].name) {
 
                 return res.status(400).json({
                     success: false,
-                    error: `Place ${i + 1} name is missing.`
+                    error:
+                        `Place ${i + 1} name is missing.`
                 });
 
             }
 
 
+            // ----------------------------------
+            // EXPLORATION TIME
+            // ----------------------------------
+
             if (
                 places[i].exploreTime === undefined ||
+                places[i].exploreTime === null ||
                 places[i].exploreTime <= 0
             ) {
 
@@ -144,12 +155,31 @@ app.post("/api/plan-trip", (req, res) => {
 
             }
 
+
+            // ----------------------------------
+            // IMPORTANCE / VALUE
+            // ----------------------------------
+
+            if (
+                places[i].value === undefined ||
+                places[i].value === null ||
+                places[i].value <= 0
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        `Importance/value for Place ${i + 1} is invalid.`
+                });
+
+            }
+
         }
 
 
-        // --------------------------------------
+        // ======================================
         // PREPARE TRIP DATA
-        // --------------------------------------
+        // ======================================
 
         const tripData = {
 
@@ -164,19 +194,24 @@ app.post("/api/plan-trip", (req, res) => {
         };
 
 
-        // --------------------------------------
+        // ======================================
         // DISPLAY DATA IN SERVER CONSOLE
-        // --------------------------------------
+        // ======================================
 
         console.log("");
+
         console.log("================================");
+
         console.log("NEW TRAVEL PLAN");
+
         console.log("================================");
+
 
         console.log(
             "Starting Location:",
             startLocation
         );
+
 
         console.log(
             "Available Time:",
@@ -184,40 +219,47 @@ app.post("/api/plan-trip", (req, res) => {
             "hours"
         );
 
+
         console.log("Places:");
+
 
         places.forEach((place, index) => {
 
             console.log(
                 `${index + 1}. ${place.name} - ` +
-                `${place.exploreTime} hours`
+                `${place.exploreTime} hours - ` +
+                `Value: ${place.value}`
             );
 
         });
+
 
         console.log(
             "Final Location:",
             finalLocation
         );
 
+
         console.log("================================");
+
         console.log("");
 
 
-        // --------------------------------------
+        // ======================================
         // TEMPORARY RESPONSE
-        // --------------------------------------
+        // ======================================
         //
-        // Later we will replace this section
+        // This section will later be replaced
         // with:
         //
-        // 1. GPS API
-        // 2. Distance calculation
-        // 3. Travel time calculation
-        // 4. C++ Branch and Bound
-        // 5. Final route
+        // 1. Geoapify Geocoding
+        // 2. Geoapify Route Matrix
+        // 3. Real travel distance
+        // 4. Real travel time
+        // 5. C++ Branch and Bound
+        // 6. Final route
         //
-        // --------------------------------------
+        // ======================================
 
         res.json({
 
@@ -229,7 +271,7 @@ app.post("/api/plan-trip", (req, res) => {
             trip: tripData,
 
             status:
-                "Waiting for GPS API and C++ algorithm."
+                "Waiting for Geoapify API and C++ algorithm."
 
         });
 
