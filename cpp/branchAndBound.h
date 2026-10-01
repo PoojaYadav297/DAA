@@ -1,92 +1,112 @@
 #ifndef BRANCH_AND_BOUND_H
 #define BRANCH_AND_BOUND_H
 
+#include "common.h"
 #include <vector>
 #include <string>
 
 using namespace std;
 
-struct Place
-{
-    string name;
-    int exploreTime;
-    int value;
-};
-
 class TravelPlanner
 {
 private:
+    // Input data
     vector<Place> places;
-    vector<vector<int>> travelTime;
-    int maxTime;
+
+    // Travel time between locations
+    vector<vector<double>> travelTime;
+
+    // Distance between locations
+    vector<vector<double>> distanceMatrix;
+
+    // Trip constraints
+    double maxTime;
+
+    // Starting and final locations
     int start;
+    int finalLocation;
 
+    // Best solution found
     int bestValue;
-    int bestTotalTime;
-    int bestTravelTime;
-    int bestExploreTime;
+    double bestTotalTime;
+    double bestTravelTime;
+    double bestExploreTime;
+    double bestDistance;
 
+    // Best route
     vector<int> bestRoute;
 
+    // Branch and Bound statistics
     long long nodesExplored;
     long long nodesPruned;
 
-    int calculateBound(
-        const vector<bool>& visited,
-        int currentTime,
-        int currentValue
+    // Calculate upper bound
+    double calculateBound(
+        int current,
+        double currentTime,
+        int currentValue,
+        const vector<bool>& visited
     );
 
+    // Main Branch and Bound function
     void branchAndBound(
         int current,
+        double currentTime,
+        double currentTravelTime,
+        double currentExploreTime,
+        double currentDistance,
+        int currentValue,
         vector<bool>& visited,
-        vector<int>& currentRoute,
-        int currentTime,
-        int currentTravelTime,
-        int currentExploreTime,
-        int currentValue
+        vector<int>& currentRoute
     );
 
 public:
+
+    // Constructor
     TravelPlanner(
         const vector<Place>& p,
-        const vector<vector<int>>& t,
-        int maximumTime,
-        int startingPlace
+        const vector<vector<double>>& t,
+        const vector<vector<double>>& d,
+        double availableTime,
+        int startingPlace,
+        int endingPlace
     );
 
+    // Start Branch and Bound
     void solve();
 
-    void displayResult();
+    // Display final result
+    void displayResult() const;
 
-    void displayAlgorithmInfo();
+    // Display algorithm information
+    void displayAlgorithmInfo() const;
 
-    void displaySearchConcept();
+    // Get best route
+    vector<int> getBestRoute() const;
 
-    int getBestValue();
+    // Get skipped places
+    vector<int> getSkippedPlaces() const;
 
-    int getBestTime();
+    // Get best value
+    int getBestValue() const;
 
-    vector<int> getBestRoute();
+    // Get total time
+    double getBestTotalTime() const;
+
+    // Get travel time
+    double getBestTravelTime() const;
+
+    // Get exploration time
+    double getBestExploreTime() const;
+
+    // Get total distance
+    double getBestDistance() const;
+
+    // Get number of explored nodes
+    long long getNodesExplored() const;
+
+    // Get number of pruned nodes
+    long long getNodesPruned() const;
 };
-
-void displayPlaces(
-    const vector<Place>& places
-);
-
-void displayTravelMatrix(
-    const vector<Place>& places,
-    const vector<vector<int>>& travelTime
-);
-
-void createDemoData(
-    vector<Place>& places,
-    vector<vector<int>>& travelTime
-);
-
-void createCustomData(
-    vector<Place>& places,
-    vector<vector<int>>& travelTime
-);
 
 #endif
