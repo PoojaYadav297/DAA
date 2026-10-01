@@ -1,109 +1,204 @@
-function showBranchAndBoundVisualization(searchTree) {
-    const container = document.getElementById("visualization");
+<!DOCTYPE html>
+<html lang="en">
 
-    if (!container) {
-        return;
-    }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    container.innerHTML = "";
+    <title>Smart Travel Planner</title>
 
-    if (!Array.isArray(searchTree) || searchTree.length === 0) {
-        container.innerHTML = "<p>No visualization data available.</p>";
-        return;
-    }
+    <link rel="stylesheet" href="css/style.css">
+</head>
 
-    const title = document.createElement("h3");
-    title.textContent = "Branch and Bound Search";
-    container.appendChild(title);
+<body>
 
-    const tree = document.createElement("div");
-    tree.className = "search-tree";
+    <!-- Header -->
+    <header>
+        <h1>Smart Travel Planner</h1>
+        <p>Find the best travel route within your available time</p>
+    </header>
 
-    searchTree.forEach((node, index) => {
-        const nodeBox = document.createElement("div");
-        nodeBox.className = "search-node";
 
-        const heading = document.createElement("h4");
-        heading.textContent = `Node ${index + 1}`;
+    <!-- Main Content -->
+    <main>
 
-        const level = document.createElement("p");
-        level.textContent = `Level: ${node.level}`;
+        <!-- Travel Planner Form -->
+        <section class="planner-section">
 
-        const currentTime = document.createElement("p");
-        currentTime.textContent =
-            `Current Time: ${node.currentTime}`;
+            <h2>Plan Your Journey</h2>
 
-        const currentValue = document.createElement("p");
-        currentValue.textContent =
-            `Current Value: ${node.currentValue}`;
+            <form id="travelForm">
 
-        const bound = document.createElement("p");
-        bound.textContent =
-            `Bound: ${Number(node.bound).toFixed(2)}`;
+                <!-- Starting Location -->
+                <div class="form-group">
+                    <label for="startLocation">
+                        Starting Location
+                    </label>
 
-        const places = document.createElement("p");
+                    <input
+                        type="text"
+                        id="startLocation"
+                        name="startLocation"
+                        placeholder="Enter starting location"
+                        required
+                    >
+                </div>
 
-        if (
-            Array.isArray(node.selectedPlaces) &&
-            node.selectedPlaces.length > 0
-        ) {
-            places.textContent =
-                `Selected: ${node.selectedPlaces.join(", ")}`;
-        } else {
-            places.textContent = "Selected: None";
-        }
 
-        nodeBox.appendChild(heading);
-        nodeBox.appendChild(level);
-        nodeBox.appendChild(currentTime);
-        nodeBox.appendChild(currentValue);
-        nodeBox.appendChild(bound);
-        nodeBox.appendChild(places);
+                <!-- Final Location -->
+                <div class="form-group">
+                    <label for="finalLocation">
+                        Final Location
+                    </label>
 
-        tree.appendChild(nodeBox);
-    });
+                    <input
+                        type="text"
+                        id="finalLocation"
+                        name="finalLocation"
+                        placeholder="Enter final location"
+                        required
+                    >
+                </div>
 
-    container.appendChild(tree);
-}
 
-function showRoute(route) {
-    const container = document.getElementById("routeVisualization");
+                <!-- Available Time -->
+                <div class="form-group">
+                    <label for="availableTime">
+                        Available Time (hours)
+                    </label>
 
-    if (!container) {
-        return;
-    }
+                    <input
+                        type="number"
+                        id="availableTime"
+                        name="availableTime"
+                        placeholder="Example: 8"
+                        min="0.1"
+                        step="0.1"
+                        required
+                    >
+                </div>
 
-    container.innerHTML = "";
 
-    if (!Array.isArray(route) || route.length === 0) {
-        container.innerHTML = "<p>No route available.</p>";
-        return;
-    }
+                <!-- Travel Speed -->
+                <div class="form-group">
+                    <label for="travelSpeed">
+                        Travel Speed (km/h)
+                    </label>
 
-    const routeContainer = document.createElement("div");
-    routeContainer.className = "route-container";
+                    <input
+                        type="number"
+                        id="travelSpeed"
+                        name="travelSpeed"
+                        placeholder="Example: 40"
+                        min="1"
+                        step="0.1"
+                        required
+                    >
+                </div>
 
-    route.forEach((location, index) => {
-        const locationBox = document.createElement("div");
-        locationBox.className = "route-location";
 
-        locationBox.textContent = location;
+                <!-- Submit Button -->
+                <button type="submit">
+                    Find Best Travel Plan
+                </button>
 
-        routeContainer.appendChild(locationBox);
+            </form>
 
-        if (index < route.length - 1) {
-            const arrow = document.createElement("span");
-            arrow.className = "route-arrow";
-            arrow.textContent = "→";
+        </section>
 
-            routeContainer.appendChild(arrow);
-        }
-    });
 
-    container.appendChild(routeContainer);
-}
+        <!-- Result Section -->
+        <section
+            id="resultSection"
+            class="result-section"
+            style="display: none;"
+        >
 
-window.showBranchAndBoundVisualization =
-    showBranchAndBoundVisualization;
+            <h2>Travel Plan Result</h2>
 
-window.showRoute = showRoute;
+
+            <!-- Result Cards -->
+            <div class="result-card">
+
+                <div class="result-item">
+                    <h3>Best Route</h3>
+                    <p id="route">No route found</p>
+                </div>
+
+
+                <div class="result-item">
+                    <h3>Total Distance</h3>
+                    <p id="totalDistance">0 km</p>
+                </div>
+
+
+                <div class="result-item">
+                    <h3>Travel Time</h3>
+                    <p id="travelTime">0 min</p>
+                </div>
+
+
+                <div class="result-item">
+                    <h3>Exploration Time</h3>
+                    <p id="explorationTime">0 min</p>
+                </div>
+
+
+                <div class="result-item">
+                    <h3>Total Time</h3>
+                    <p id="totalTime">0 min</p>
+                </div>
+
+
+                <div class="result-item">
+                    <h3>Total Value</h3>
+                    <p id="totalValue">0</p>
+                </div>
+
+            </div>
+
+
+            <!-- Route Visualization -->
+            <section class="route-section">
+
+                <h2>Route Visualization</h2>
+
+                <div id="routeVisualization">
+                </div>
+
+            </section>
+
+
+            <!-- Branch and Bound Visualization -->
+            <section class="visualization-section">
+
+                <h2>Branch and Bound Visualization</h2>
+
+                <div id="visualization">
+                </div>
+
+            </section>
+
+        </section>
+
+    </main>
+
+
+    <!-- Footer -->
+    <footer>
+
+        <p>
+            Smart Travel Planner |
+            Branch and Bound Algorithm
+        </p>
+
+    </footer>
+
+
+    <!-- JavaScript Files -->
+    <script src="js/visualization.js"></script>
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>
