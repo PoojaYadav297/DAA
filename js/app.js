@@ -1,143 +1,546 @@
 document.addEventListener("DOMContentLoaded", () => {
+
     const form = document.getElementById("travelForm");
-    const resultSection = document.getElementById("resultSection");
 
-    if (!form) {
-        return;
-    }
+    const numberOfPlaces =
+        document.getElementById("numberOfPlaces");
 
-    form.addEventListener("submit", async (event) => {
-        event.preventDefault();
+    const addPlacesButton =
+        document.getElementById("addPlacesButton");
 
-        const startLocation = document.getElementById("startLocation").value.trim();
-        const finalLocation = document.getElementById("finalLocation").value.trim();
-        const availableTime = parseFloat(
-            document.getElementById("availableTime").value
-        );
-        const travelSpeed = parseFloat(
-            document.getElementById("travelSpeed").value
-        );
+    const placesContainer =
+        document.getElementById("placesContainer");
 
-        if (!startLocation || !finalLocation) {
-            alert("Please enter the starting and final locations.");
+    const calculateButton =
+        document.getElementById("calculateButton");
+
+    const resultSection =
+        document.getElementById("resultSection");
+
+
+    // ==========================================
+    // CREATE PLACE INPUTS
+    // ==========================================
+
+    addPlacesButton.addEventListener("click", () => {
+
+        const count = parseInt(numberOfPlaces.value);
+
+
+        if (isNaN(count) || count < 1 || count > 10) {
+
+            alert("Please enter between 1 and 10 places.");
+
             return;
         }
+
+
+        // Clear previous places
+        placesContainer.innerHTML = "";
+
+
+        // Heading
+        const heading = document.createElement("h3");
+
+        heading.textContent =
+            "Enter Places and Exploration Time";
+
+        placesContainer.appendChild(heading);
+
+
+        // Create inputs
+        for (let i = 1; i <= count; i++) {
+
+            const placeBox =
+                document.createElement("div");
+
+            placeBox.className = "place-box";
+
+
+            // Place name
+
+            const placeLabel =
+                document.createElement("label");
+
+            placeLabel.textContent =
+                `Place ${i}`;
+
+            const placeInput =
+                document.createElement("input");
+
+            placeInput.type = "text";
+
+            placeInput.id =
+                `place${i}`;
+
+            placeInput.className =
+                "place-name";
+
+            placeInput.placeholder =
+                `Enter place ${i}`;
+
+            placeInput.required = true;
+
+
+            // Exploration time
+
+            const timeLabel =
+                document.createElement("label");
+
+            timeLabel.textContent =
+                "Exploration Time (hours)";
+
+
+            const timeInput =
+                document.createElement("input");
+
+            timeInput.type = "number";
+
+            timeInput.id =
+                `exploreTime${i}`;
+
+            timeInput.className =
+                "explore-time";
+
+            timeInput.placeholder =
+                "Example: 1";
+
+            timeInput.min = "0.1";
+
+            timeInput.step = "0.1";
+
+            timeInput.required = true;
+
+
+            // Add elements
+
+            placeBox.appendChild(placeLabel);
+
+            placeBox.appendChild(placeInput);
+
+            placeBox.appendChild(timeLabel);
+
+            placeBox.appendChild(timeInput);
+
+
+            placesContainer.appendChild(placeBox);
+        }
+
+
+        // Show calculate button
+
+        calculateButton.style.display =
+            "block";
+
+    });
+
+
+    // ==========================================
+    // SUBMIT TRIP
+    // ==========================================
+
+    form.addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+
+        const startLocation =
+            document.getElementById(
+                "startLocation"
+            ).value.trim();
+
+
+        const finalLocation =
+            document.getElementById(
+                "finalLocation"
+            ).value.trim();
+
+
+        const availableTime =
+            parseFloat(
+                document.getElementById(
+                    "availableTime"
+                ).value
+            );
+
+
+        const count =
+            parseInt(
+                numberOfPlaces.value
+            );
+
+
+        // ======================================
+        // VALIDATION
+        // ======================================
+
+        if (!startLocation) {
+
+            alert("Please enter the starting location.");
+
+            return;
+        }
+
+
+        if (!finalLocation) {
+
+            alert("Please enter the final location.");
+
+            return;
+        }
+
 
         if (
             isNaN(availableTime) ||
-            availableTime <= 0 ||
-            isNaN(travelSpeed) ||
-            travelSpeed <= 0
+            availableTime <= 0
         ) {
-            alert("Please enter valid time and travel speed.");
+
+            alert("Please enter valid available time.");
+
             return;
         }
 
-        const inputData = {
-            startLocation,
-            finalLocation,
-            availableTime,
-            travelSpeed
-        };
 
-        try {
-            const response = await fetch("/api/branch-and-bound", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(inputData)
-            });
+        // ======================================
+        // COLLECT PLACES
+        // ======================================
 
-            if (!response.ok) {
-                throw new Error("Unable to calculate the travel plan.");
+        const places = [];
+
+
+        for (let i = 1; i <= count; i++) {
+
+            const name =
+                document.getElementById(
+                    `place${i}`
+                ).value.trim();
+
+
+            const exploreTime =
+                parseFloat(
+                    document.getElementById(
+                        `exploreTime${i}`
+                    ).value
+                );
+
+
+            if (!name) {
+
+                alert(
+                    `Please enter Place ${i}.`
+                );
+
+                return;
             }
 
-            const result = await response.json();
+
+            if (
+                isNaN(exploreTime) ||
+                exploreTime <= 0
+            ) {
+
+                alert(
+                    `Please enter valid exploration time for Place ${i}.`
+                );
+
+                return;
+            }
+
+
+            places.push({
+
+                name: name,
+
+                exploreTime: exploreTime
+
+            });
+
+        }
+
+
+        // ======================================
+        // DATA SENT TO BACKEND
+        // ======================================
+
+        const tripData = {
+
+            startLocation: startLocation,
+
+            places: places,
+
+            finalLocation: finalLocation,
+
+            availableTime: availableTime
+
+        };
+
+
+        console.log(
+            "Trip Data:",
+            tripData
+        );
+
+
+        // ======================================
+        // CONNECT TO BACKEND
+        // ======================================
+
+        try {
+
+            const response =
+                await fetch(
+                    "http://localhost:3000/api/plan-trip",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                tripData
+                            )
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Unable to create travel plan."
+                );
+
+            }
+
+
+            const result =
+                await response.json();
+
+
+            console.log(
+                "Backend Result:",
+                result
+            );
+
 
             displayResult(result);
 
+
         } catch (error) {
+
             console.error(error);
-            alert("Could not connect to the travel planner.");
+
+
+            alert(
+                "Backend is not connected yet. Your trip data was prepared successfully."
+            );
+
         }
+
     });
 
+
+    // ==========================================
+    // DISPLAY RESULT
+    // ==========================================
+
     function displayResult(result) {
-        if (!resultSection) {
-            return;
+
+        resultSection.style.display =
+            "block";
+
+
+        const selectedPlaces =
+            document.getElementById(
+                "selectedPlaces"
+            );
+
+
+        const skippedPlaces =
+            document.getElementById(
+                "skippedPlaces"
+            );
+
+
+        const route =
+            document.getElementById(
+                "route"
+            );
+
+
+        const totalDistance =
+            document.getElementById(
+                "totalDistance"
+            );
+
+
+        const travelTime =
+            document.getElementById(
+                "travelTime"
+            );
+
+
+        const explorationTime =
+            document.getElementById(
+                "explorationTime"
+            );
+
+
+        const totalTime =
+            document.getElementById(
+                "totalTime"
+            );
+
+
+        const remainingTime =
+            document.getElementById(
+                "remainingTime"
+            );
+
+
+        // Selected places
+
+        if (Array.isArray(result.selectedPlaces)) {
+
+            selectedPlaces.textContent =
+                result.selectedPlaces.join(" → ");
+
         }
 
-        resultSection.style.display = "block";
 
-        const routeElement = document.getElementById("route");
-        const distanceElement = document.getElementById("totalDistance");
-        const travelTimeElement = document.getElementById("travelTime");
-        const explorationTimeElement =
-            document.getElementById("explorationTime");
-        const totalTimeElement = document.getElementById("totalTime");
-        const valueElement = document.getElementById("totalValue");
+        // Skipped places
 
-        if (routeElement) {
-            if (Array.isArray(result.route)) {
-                routeElement.textContent = result.route.join(" → ");
-            } else {
-                routeElement.textContent = result.route || "No route found";
-            }
+        if (Array.isArray(result.skippedPlaces)) {
+
+            skippedPlaces.textContent =
+                result.skippedPlaces.join(", ");
+
         }
 
-        if (distanceElement) {
-            distanceElement.textContent =
-                `${result.totalDistance ?? 0} km`;
+
+        // Route
+
+        if (Array.isArray(result.route)) {
+
+            route.textContent =
+                result.route.join(" → ");
+
         }
 
-        if (travelTimeElement) {
-            travelTimeElement.textContent =
-                formatTime(result.travelTime ?? 0);
+
+        // Distance
+
+        if (result.totalDistance !== undefined) {
+
+            totalDistance.textContent =
+                `${result.totalDistance} km`;
+
         }
 
-        if (explorationTimeElement) {
-            explorationTimeElement.textContent =
-                formatTime(result.explorationTime ?? 0);
+
+        // Travel time
+
+        if (result.travelTime !== undefined) {
+
+            travelTime.textContent =
+                formatTime(
+                    result.travelTime
+                );
+
         }
 
-        if (totalTimeElement) {
-            totalTimeElement.textContent =
-                formatTime(result.totalTime ?? 0);
+
+        // Exploration time
+
+        if (result.explorationTime !== undefined) {
+
+            explorationTime.textContent =
+                formatTime(
+                    result.explorationTime
+                );
+
         }
 
-        if (valueElement) {
-            valueElement.textContent =
-                result.totalValue ?? 0;
+
+        // Total time
+
+        if (result.totalTime !== undefined) {
+
+            totalTime.textContent =
+                formatTime(
+                    result.totalTime
+                );
+
         }
 
-        displayVisualization(result);
-    }
 
-    function formatTime(hours) {
-        const totalMinutes = Math.round(hours * 60);
+        // Remaining time
 
-        const hoursPart = Math.floor(totalMinutes / 60);
-        const minutesPart = totalMinutes % 60;
+        if (result.remainingTime !== undefined) {
 
-        if (hoursPart === 0) {
-            return `${minutesPart} min`;
+            remainingTime.textContent =
+                formatTime(
+                    result.remainingTime
+                );
+
         }
 
-        if (minutesPart === 0) {
-            return `${hoursPart} hr`;
-        }
 
-        return `${hoursPart} hr ${minutesPart} min`;
-    }
+        // Visualization
 
-    function displayVisualization(result) {
         if (
-            typeof window.showBranchAndBoundVisualization === "function"
+            typeof window
+                .showBranchAndBoundVisualization
+            === "function"
         ) {
+
             window.showBranchAndBoundVisualization(
                 result.searchTree || []
             );
+
         }
+
     }
+
+
+    // ==========================================
+    // FORMAT TIME
+    // ==========================================
+
+    function formatTime(hours) {
+
+        const totalMinutes =
+            Math.round(hours * 60);
+
+
+        const hoursPart =
+            Math.floor(
+                totalMinutes / 60
+            );
+
+
+        const minutesPart =
+            totalMinutes % 60;
+
+
+        if (hoursPart === 0) {
+
+            return `${minutesPart} min`;
+
+        }
+
+
+        if (minutesPart === 0) {
+
+            return `${hoursPart} hr`;
+
+        }
+
+
+        return `${hoursPart} hr ${minutesPart} min`;
+
+    }
+
 });
